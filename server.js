@@ -23,11 +23,14 @@ app.get('/webhook', (req, res) => {
   const token = req.query['hub.verify_token'];
   const challenge = req.query['hub.challenge'];
 
+  console.log(`Verificando o webhook... Mode: ${mode}, Token: ${token}`);
+
   if (mode && token) {
     if (mode === 'subscribe' && token === VERIFY_TOKEN) {
       console.log('Webhook de verificação bem-sucedido!');
       res.status(200).send(challenge);
     } else {
+      console.log('Token de verificação inválido');
       res.status(403).send('Token de verificação inválido');
     }
   }
@@ -36,6 +39,9 @@ app.get('/webhook', (req, res) => {
 // Rota para receber os comentários do webhook
 app.post('/webhook', async (req, res) => {
   const data = req.body;
+
+  console.log('Recebendo evento do Facebook...');
+  console.log('Corpo da solicitação recebida:', JSON.stringify(data, null, 2));
 
   // Verifica se a notificação é sobre um comentário
   if (data.entry && data.entry[0].changes) {
@@ -72,6 +78,9 @@ const sendToODA = async (commentId, message) => {
     }
   };
 
+  console.log('Enviando dados para o ODA...');
+  console.log('Dados enviados para ODA:', JSON.stringify(data, null, 2));
+
   try {
     const response = await axios.post(odaEndpoint, data, {
       headers: {
@@ -80,7 +89,7 @@ const sendToODA = async (commentId, message) => {
       }
     });
 
-    console.log('Resposta do ODA:', response.data);
+    console.log('Resposta do ODA recebida:', response.data);
 
     // Verifica se o ODA gerou uma resposta
     const replyMessage = response.data.output.text;
@@ -99,6 +108,8 @@ const sendToODA = async (commentId, message) => {
 // Função para responder ao comentário no Facebook
 const replyToComment = async (commentId, message) => {
   const pageAccessToken = process.env.FB_PAGE_ACCESS_TOKEN;
+
+  console.log('Respondendo ao comentário no Facebook...');
 
   try {
     const response = await axios.post(`https://graph.facebook.com/v12.0/${commentId}/comments`, {
